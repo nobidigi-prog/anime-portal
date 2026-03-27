@@ -1,9 +1,4 @@
-// @ts-check
 import { defineConfig } from 'astro/config';
 
-import cloudflare from '@astrojs/cloudflare';
-
-// https://astro.build/config
-export default defineConfig({
-  adapter: cloudflare()
-});
+// Vercel用に標準設定に戻します
+export default defineConfig({});
