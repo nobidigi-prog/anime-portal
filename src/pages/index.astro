@@ -1,4 +1,6 @@
 ---
+import Analytics from '@vercel/analytics/astro';
+
 const API_ID = import.meta.env.DMM_API_ID;
 const AFFILIATE_ID = import.meta.env.DMM_AFFILIATE_ID;
 
@@ -297,5 +299,6 @@ const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${e
     <p style="margin-top:20px; opacity:0.7;">&copy; 2026 Anime Store Portal</p>
     <p style="font-size:0.8rem; margin-top:10px;">本サイトは、いち早く予約情報を届けるためのアニメ専門ポータルサイトです。</p>
   </footer>
+  <Analytics />
 </body>
 </html>
