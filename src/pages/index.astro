@@ -36,7 +36,8 @@ const bluelock = await fetchSafe(`&keyword=${encodeURIComponent("ブルーロッ
 
 const tags = ["限定特典", "完全生産限定", "予約受付中", "フィギュア", "Blu-ray"];
 const getImg = (item) => item.imageURL?.large || item.imageURL?.small || "/no-image.png";
-const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(Astro.url.href)}`;
+// 直接本番URLを指定して固定します
+const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent("https://anime-portal-two.vercel.app")}`;
 ---
 
 <html lang="ja">
