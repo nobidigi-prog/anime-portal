@@ -1,0 +1,300 @@
+---
+const API_ID = import.meta.env.DMM_API_ID;
+const AFFILIATE_ID = import.meta.env.DMM_AFFILIATE_ID;
+
+const url = new URL(Astro.request.url);
+const searchKeyword = url.searchParams.get('keyword') || "";
+
+const baseUrl = "https://api.dmm.com/affiliate/v3/ItemList";
+const common = `api_id=${API_ID}&affiliate_id=${AFFILIATE_ID}&site=DMM.com&service=mono&output=json`;
+
+async function fetchSafe(query) {
+  try {
+    const res = await fetch(`${baseUrl}?${common}${query}`);
+    const data = await res.json();
+    return data.result?.items || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+// データの取得
+const searchResults = searchKeyword ? await fetchSafe(`&keyword=${encodeURIComponent(searchKeyword)}&sort=rank&hits=20`) : [];
+const newArrivals = await fetchSafe(`&keyword=${encodeURIComponent("アニメ")}&sort=date&hits=15`);
+const rankings = await fetchSafe(`&keyword=${encodeURIComponent("アニメ")}&sort=rank&hits=8`);
+
+// 特集
+const oshinoko = await fetchSafe(`&keyword=${encodeURIComponent("推しの子 グッズ")}&sort=rank&hits=4`);
+const movieAnime = await fetchSafe(`&keyword=${encodeURIComponent("劇場版 アニメ")}&sort=rank&hits=4`);
+
+// ★ミニ特集のデータ取得を復活・修正
+const frieren = await fetchSafe(`&keyword=${encodeURIComponent("葬送のフリーレン グッズ")}&sort=rank&hits=2`);
+const kusuriya = await fetchSafe(`&keyword=${encodeURIComponent("薬屋のひとりごと グッズ")}&sort=rank&hits=2`);
+const haikyu = await fetchSafe(`&keyword=${encodeURIComponent("ハイキュー!! グッズ")}&sort=rank&hits=2`); // キーワード強化
+const jujutsu = await fetchSafe(`&keyword=${encodeURIComponent("呪術廻戦 グッズ")}&sort=rank&hits=2`);
+const bluelock = await fetchSafe(`&keyword=${encodeURIComponent("ブルーロック")}&sort=rank&hits=4`);
+
+const tags = ["限定特典", "完全生産限定", "予約受付中", "フィギュア", "Blu-ray"];
+const getImg = (item) => item.imageURL?.large || item.imageURL?.small || "/no-image.png";
+const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(Astro.url.href)}`;
+---
+
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="2026年最新アニメの予約・発売情報を最速チェック。推しの子、ブルーロック、フリーレンなど人気作の予約開始情報をDMM公式データからリアルタイム取得。今すぐ注文可能な新作アイテムを一括検索できます。" />
+  <title>Anime Store Portal | 2026年最新アニメ予約・最速在庫検索</title>
+  
+  <style>
+    :root { --primary: #00a8ff; --accent: #e84118; --bg: #f5f6fa; --dark: #191919; --oshinoko: #ff4d94; --movie: #f39c12; }
+    body { font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif; background: var(--bg); margin: 0; color: #2f3640; line-height: 1.6; }
+    
+    header { background: var(--dark); color: white; padding: 45px 20px; text-align: center; border-bottom: 5px solid var(--primary); }
+    h1 { margin: 0; font-size: 2.4rem; font-weight: 900; }
+    header p { margin: 10px 0 0; opacity: 0.9; font-size: 1.1rem; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 25px; display: flex; flex-direction: row; gap: 30px; justify-content: center; }
+    main { flex: 1; min-width: 0; }
+    
+    section { background: white; border-radius: 20px; padding: 30px; margin-bottom: 30px; box-shadow: 0 8px 25px rgba(0,0,0,0.05); box-sizing: border-box; }
+    h2 { border-left: 8px solid var(--primary); padding-left: 15px; margin: 0 0 20px 0; font-size: 1.5rem; font-weight: bold; }
+
+    /* 【案3】速報予約ポータル用ヒーローエリア */
+    .hero-search-area {
+      background: white;
+      border: 1px solid #e1e4e8;
+      border-radius: 20px;
+      padding: 40px;
+      margin-bottom: 35px;
+      box-shadow: 0 10px 35px rgba(0,0,0,0.07);
+      text-align: left;
+    }
+    .hero-headline {
+      font-size: 1.9rem;
+      font-weight: 900;
+      color: #111;
+      margin: 0 0 15px 0;
+      line-height: 1.3;
+    }
+    .hero-subtext {
+      font-size: 1.05rem;
+      color: #555;
+      margin-bottom: 30px;
+      max-width: 850px;
+    }
+    .hero-subtext strong { color: var(--primary); }
+
+    /* 特大検索フォーム */
+    .search-form { display: flex; gap: 15px; width: 100%; }
+    .input-huge {
+      flex: 1;
+      border: 3px solid #ddd;
+      border-radius: 16px;
+      padding: 22px 25px;
+      font-size: 1.5rem;
+      font-weight: bold;
+      outline: none;
+      background: #fafafa;
+      transition: 0.3s;
+    }
+    .input-huge:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 15px rgba(0,168,255,0.15); }
+    .btn-huge {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 0 50px;
+      border-radius: 16px;
+      font-size: 1.5rem;
+      font-weight: 900;
+      cursor: pointer;
+      transition: 0.2s;
+      white-space: nowrap;
+    }
+    .btn-huge:hover { background: #0086cc; transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,168,255,0.3); }
+
+    /* ナビゲーション */
+    .back-nav { margin-bottom: 25px; }
+    .btn-back { display: inline-flex; align-items: center; background: #333; color: white; padding: 12px 28px; border-radius: 50px; text-decoration: none; font-weight: bold; font-size: 1.1rem; }
+
+    /* グリッド・カード */
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 25px; }
+    .card { background: #fff; border: 1px solid #eee; border-radius: 15px; text-decoration: none; color: inherit; overflow: hidden; display: flex; flex-direction: column; transition: 0.3s; }
+    .card:hover { transform: translateY(-8px); box-shadow: 0 12px 30px rgba(0,0,0,0.12); border-color: var(--primary); }
+    .img-box { width: 100%; aspect-ratio: 1/1.2; padding: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: #fff; }
+    .img-box img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .info { padding: 18px; border-top: 1px solid #f0f0f0; }
+    .title { font-size: 0.95rem; font-weight: bold; height: 3em; overflow: hidden; margin-bottom: 12px; color: #111; }
+    .price { color: var(--accent); font-size: 1.3rem; font-weight: 900; text-align: right; display: block; }
+
+    /* リスト形式 */
+    .list-container { border: 1px solid #eee; border-radius: 12px; overflow: hidden; }
+    .list-item { display: flex; justify-content: space-between; align-items: center; padding: 18px; border-bottom: 1px solid #eee; text-decoration: none; color: inherit; font-weight: 500; }
+    .list-item:hover { background: #f0f9ff; color: var(--primary); }
+
+    /* ★ミニ特集の個別枠を復活 */
+    .mini-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 35px; }
+    .mini-card { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 8px 25px rgba(0,0,0,0.05); border: 1px solid #eee; }
+    .mini-card h3 { font-size: 1.2rem; margin: 0 0 18px 0; padding-bottom: 12px; border-bottom: 4px solid var(--primary); }
+
+    /* サイドバー */
+    aside { width: 320px; flex-shrink: 0; display: flex; flex-direction: column; gap: 30px; }
+    .side-box { background: white; border-radius: 20px; padding: 25px; box-shadow: 0 8px 25px rgba(0,0,0,0.05); }
+    .side-title { font-weight: bold; border-bottom: 4px solid var(--dark); padding-bottom: 10px; margin-bottom: 20px; font-size: 1.1rem; }
+    .tag { display: inline-block; background: #f1f2f6; padding: 10px 16px; border-radius: 8px; font-size: 0.9rem; text-decoration: none; color: #333; border: 1px solid #ddd; margin: 0 5px 10px 0; font-weight: bold; }
+    .tag:hover { background: var(--primary); color: white; border-color: var(--primary); }
+    .qr-area { text-align: center; }
+    .qr-area img { width: 180px; border: 1px solid #eee; padding: 10px; background: #fff; margin-top: 15px; }
+
+    footer { background: var(--dark); color: #ccc; padding: 50px 20px; text-align: center; font-size: 1rem; margin-top: 70px; }
+    footer a { color: var(--primary); text-decoration: none; font-weight: bold; }
+
+    @media (max-width: 950px) {
+      .container { flex-direction: column; }
+      aside { width: 100%; order: 2; }
+      main { order: 1; }
+      .hero-search-area { padding: 30px 20px; }
+      .hero-headline { font-size: 1.5rem; }
+      .search-form { flex-direction: column; }
+      .btn-huge { padding: 18px; }
+      .mini-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Anime Store Portal</h1>
+    <p>【2026年最新】アニメ新作予約・最速発売スケジュール</p>
+  </header>
+
+  <div class="container">
+    <main>
+      <section class="hero-search-area">
+        <h2 class="hero-headline">2026年新作アニメ 予約・発売情報をリアルタイム検索</h2>
+        <p class="hero-subtext">
+          話題作の<strong>予約開始情報をいち早くチェック</strong>。DMM.com公式データと連携し、予約受付中の新作から発売直後の人気アイテムまで、今すぐ注文可能な最新情報を一括表示します。
+        </p>
+        
+        <form action="/" method="get" class="search-form">
+          <input 
+            type="text" 
+            name="keyword" 
+            placeholder="例：推しの子、フィギュア、Blu-ray..." 
+            value={searchKeyword}
+            class="input-huge"
+            aria-label="作品名で検索"
+          />
+          <button type="submit" class="btn-huge">最速在庫検索</button>
+        </form>
+      </section>
+
+      {/* 検索結果 */}
+      {searchKeyword && (
+        <section style="background:#fffde7; border:3px solid #fdd835;">
+          <div class="back-nav"><a href="/" class="btn-back">🏠 TOPページへ戻る</a></div>
+          <h2>🔍 「{searchKeyword}」の検索・予約状況</h2>
+          <div class="grid">
+            {searchResults.map(item => (
+              <a href={item.affiliateURL} target="_blank" class="card">
+                <div class="img-box"><img src={getImg(item)} alt="" loading="lazy" /></div>
+                <div class="info">
+                  <div class="title">{item.title}</div>
+                  <span class="price">¥{Number(item.prices.price).toLocaleString()}</span>
+                </div>
+              </a>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* トップページコンテンツ */}
+      {!searchKeyword && (
+        <>
+          <section>
+            <h2>🆕 最新予約・入荷アイテム (最速更新)</h2>
+            <p style="font-size: 1rem; color: #e84118; font-weight: bold; margin-bottom: 25px; padding: 18px; background: #fff1f0; border-radius: 12px; border-left: 6px solid var(--accent);">
+              ⚠️ 人気作の予約枠は埋まりやすくなっています。在庫があるうちに確保をおすすめします！
+            </p>
+            <div class="list-container">
+              {newArrivals.map(item => (
+                <a href={item.affiliateURL} target="_blank" class="list-item">
+                  <span style="flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding-right:15px; font-weight:700;">{item.title}</span>
+                  <span class="price" style="font-size:1.1rem;">¥{Number(item.prices.price).toLocaleString()}</span>
+                </a>
+              ))}
+            </div>
+          </section>
+
+          <section style="border-top: 8px solid var(--oshinoko);">
+            <h2 style="border-left-color: var(--oshinoko);">💎 【推しの子】 予約・新作一覧</h2>
+            <div class="grid">
+              {oshinoko.map(item => (
+                <a href={item.affiliateURL} target="_blank" class="card">
+                  <div class="img-box"><img src={getImg(item)} alt="" /></div>
+                  <div class="info"><div class="title">{item.title}</div><span class="price">¥{Number(item.prices.price).toLocaleString()}</span></div>
+                </a>
+              ))}
+            </div>
+          </section>
+
+          {/* ★4作品ミニ特集タイルを復活 */}
+          <div class="mini-grid">
+            <div class="mini-card"><h3 style="border-color:#8e44ad;">葬送のフリーレン</h3>
+              {frieren.map(item => <a href={item.affiliateURL} target="_blank" class="list-item">{item.title}</a>)}
+            </div>
+            <div class="mini-card"><h3 style="border-color:#27ae60;">薬屋のひとりごと</h3>
+              {kusuriya.map(item => <a href={item.affiliateURL} target="_blank" class="list-item">{item.title}</a>)}
+            </div>
+            <div class="mini-card"><h3 style="border-color:#e67e22;">ハイキュー!!</h3>
+              {haikyu.map(item => <a href={item.affiliateURL} target="_blank" class="list-item">{item.title}</a>)}
+            </div>
+            <div class="mini-card"><h3 style="border-color:#2980b9;">呪術廻戦</h3>
+              {jujutsu.map(item => <a href={item.affiliateURL} target="_blank" class="list-item">{item.title}</a>)}
+            </div>
+          </div>
+
+          <section style="border-top: 6px solid var(--movie);">
+            <h2 style="border-left-color: var(--movie);">🎬 劇場版・映画アニメ 予約情報</h2>
+            <div class="grid">
+              {movieAnime.map(item => (
+                <a href={item.affiliateURL} target="_blank" class="card">
+                  <div class="img-box"><img src={getImg(item)} alt="" /></div>
+                  <div class="info"><div class="title">{item.title}</div><span class="price">¥{Number(item.prices.price).toLocaleString()}</span></div>
+                </a>
+              ))}
+            </div>
+          </section>
+        </>
+      )}
+    </main>
+
+    <aside>
+      <div class="side-box">
+        <div class="side-title">🏷️ 人気の急上昇タグ</div>
+        <div class="tag-cloud">
+          {tags.map(tag => <a href={`?keyword=${encodeURIComponent(tag)}`} class="tag">#{tag}</a>)}
+        </div>
+      </div>
+      <div class="side-box">
+        <div class="side-title">📂 カテゴリー検索</div>
+        <div class="list-container" style="border:none;">
+          <a href="?keyword=Blu-ray" class="list-item" style="padding-left:0;">新作 Blu-ray</a>
+          <a href="?keyword=フィギュア" class="list-item" style="padding-left:0;">最新フィギュア</a>
+          <a href="?keyword=CD" class="list-item" style="padding-left:0; border-bottom:none;">主題歌・サントラ</a>
+        </div>
+      </div>
+      <div class="side-box qr-area">
+        <div class="side-title">📱 スマホで予約管理</div>
+        <img src={qrUrl} alt="QRコード" />
+      </div>
+    </aside>
+  </div>
+
+  <footer>
+    <p>資料提供: <a href="https://affiliate.dmm.com/api/" target="_blank">DMM.com Webサービス API</a></p>
+    <p style="margin-top:20px; opacity:0.7;">&copy; 2026 Anime Store Portal</p>
+    <p style="font-size:0.8rem; margin-top:10px;">本サイトは、いち早く予約情報を届けるためのアニメ専門ポータルサイトです。</p>
+  </footer>
+</body>
+</html>
