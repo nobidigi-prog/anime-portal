@@ -172,10 +172,45 @@ const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${e
     footer { background: var(--dark); color: #ccc; padding: 50px 20px; text-align: center; font-size: 1rem; margin-top: 70px; }
     footer a { color: var(--primary); text-decoration: none; font-weight: bold; }
 
-    @media (max-width: 950px) {
-      .container { flex-direction: column; }
+@media (max-width: 950px) {
+      /* 1. 画面左右の余白を減らして、コンテンツ表示エリアを広げる */
+      .container { 
+        flex-direction: column; 
+        padding: 10px; /* 25pxから10pxに減らして横幅を確保 */
+        gap: 20px;
+      }
+      
+      section {
+        padding: 20px 15px; /* セクション内の余白も少し削ってコンテンツを広げる */
+        margin-bottom: 20px;
+      }
+
       aside { width: 100%; order: 2; }
       main { order: 1; }
+
+      /* 2. 「最新予約・入荷アイテム」をスマホでは2段にする */
+      .list-item {
+        flex-direction: column; /* 縦並びにする */
+        align-items: flex-start; /* 左寄せ */
+        gap: 8px; /* 商品名と価格の間の余白 */
+        padding: 15px;
+      }
+
+      /* 3. 商品名部分の制限を解除し、折り返して全部見せる */
+      .list-item span[style*="flex:1"] {
+        white-space: normal !important; /* 強制的に折り返しを許可 */
+        padding-right: 0;
+        font-size: 0.95rem; /* スマホでは少し文字を小さくして読みやすく */
+        line-height: 1.4;
+      }
+
+      /* 4. 価格部分を右下に配置 */
+      .list-item .price {
+        align-self: flex-end; /* 価格だけ右寄せにする */
+        font-size: 1.1rem;
+        font-weight: 900;
+      }
+
       .hero-search-area { padding: 30px 20px; }
       .hero-headline { font-size: 1.5rem; }
       .search-form { flex-direction: column; }
