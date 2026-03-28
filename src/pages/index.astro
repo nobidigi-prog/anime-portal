@@ -20,21 +20,41 @@ async function fetchSafe(query) {
   }
 }
 
-// データの取得
-const searchResults = searchKeyword ? await fetchSafe(`&keyword=${encodeURIComponent(searchKeyword)}&sort=rank&hits=20`) : [];
-const newArrivals = await fetchSafe(`&keyword=${encodeURIComponent("アニメ")}&sort=date&hits=15`);
-const rankings = await fetchSafe(`&keyword=${encodeURIComponent("アニメ")}&sort=rank&hits=8`);
+// STEP 1: 「予約チケット」を先に作る（awaitを付けない！）
+const searchPromise = searchKeyword 
+  ? fetchSafe(`&keyword=${encodeURIComponent(searchKeyword)}&sort=rank&hits=20`) 
+  : Promise.resolve([]);
+const newArrivalsPromise = fetchSafe(`&keyword=${encodeURIComponent("アニメ")}&sort=date&hits=15`);
+const rankingsPromise = fetchSafe(`&keyword=${encodeURIComponent("アニメ")}&sort=rank&hits=8`);
+const oshinokoPromise = fetchSafe(`&keyword=${encodeURIComponent("推しの子 グッズ")}&sort=rank&hits=4`);
+const movieAnimePromise = fetchSafe(`&keyword=${encodeURIComponent("劇場版 アニメ")}&sort=rank&hits=4`);
+const frierenPromise = fetchSafe(`&keyword=${encodeURIComponent("葬送のフリーレン")}&sort=rank&hits=2`);
+const kusuriyaPromise = fetchSafe(`&keyword=${encodeURIComponent("薬屋のひとりごと")}&sort=rank&hits=2`);
+const haikyuPromise = fetchSafe(`&keyword=${encodeURIComponent("ハイキュー!!")}&sort=rank&hits=2`);
+const jujutsuPromise = fetchSafe(`&keyword=${encodeURIComponent("呪術廻戦")}&sort=rank&hits=2`);
 
-// 特集
-const oshinoko = await fetchSafe(`&keyword=${encodeURIComponent("推しの子 グッズ")}&sort=rank&hits=4`);
-const movieAnime = await fetchSafe(`&keyword=${encodeURIComponent("劇場版 アニメ")}&sort=rank&hits=4`);
-
-// ★ミニ特集のデータ取得を復活・修正
-const frieren = await fetchSafe(`&keyword=${encodeURIComponent("葬送のフリーレン グッズ")}&sort=rank&hits=2`);
-const kusuriya = await fetchSafe(`&keyword=${encodeURIComponent("薬屋のひとりごと グッズ")}&sort=rank&hits=2`);
-const haikyu = await fetchSafe(`&keyword=${encodeURIComponent("ハイキュー!! グッズ")}&sort=rank&hits=2`); // キーワード強化
-const jujutsu = await fetchSafe(`&keyword=${encodeURIComponent("呪術廻戦 グッズ")}&sort=rank&hits=2`);
-const bluelock = await fetchSafe(`&keyword=${encodeURIComponent("ブルーロック")}&sort=rank&hits=4`);
+// STEP 2: 「よーいドン！」で一斉に取得を開始し、全部終わるまで一気に待つ
+const [
+  searchResults,
+  newArrivals,
+  rankings,
+  oshinoko,
+  movieAnime,
+  frieren,
+  kusuriya,
+  haikyu,
+  jujutsu
+] = await Promise.all([
+  searchPromise,
+  newArrivalsPromise,
+  rankingsPromise,
+  oshinokoPromise,
+  movieAnimePromise,
+  frierenPromise,
+  kusuriyaPromise,
+  haikyuPromise,
+  jujutsuPromise
+]);
 
 const tags = ["限定特典", "完全生産限定", "予約受付中", "フィギュア", "Blu-ray"];
 const getImg = (item) => item.imageURL?.large || item.imageURL?.small || "/no-image.png";
